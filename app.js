@@ -7,24 +7,46 @@ const express = require('express');
 const path = require('path');
 const con = require('./db.js')
 const app = express();
+const bcrypt = require('bcrypt');
+
+
 
 //enable the server can reach the public folder
 app.use('/public', express.static(path.join(__dirname, 'public')));
 //to tell the server to use JSON
 app.use(express.json());
 
-app.post('/login', function (req, res) {
-    const { username, password } = req.body;
-    const sql = `SELECT id, username, role FROM user WHERE username = ? AND password = ?`;
-    con.query(sql, [username, password], function(err, result){
-        if(err){
+app.post('/login', function(req, res) {
+    const username = req.body.username;
+    const raw = req.body.password;
+    const sql = `SELECT id, username, password, role FROM user WHERE username=?`;
+    con.query(sql, [username], function(err, result) {
+        if(err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
         }
-        if(result.length != 1){
-            return res.status(401).send('Wrong username or password');
+        bcrypt.compare(raw, result[0].password, function(err2, same) {
+            if(err2) {
+                console.error(err2);
+                return res.status(500).send('Internal Server Error');
+            }
+            if(same === false) {
+                return res.status(401).send('Wrong username or password');
+            }
+            res.status(200).send('Login OK');
+        });
+    });
+});
+
+
+//hash the password
+app.get('/password/:raw', function(req, res){
+    const raw = req.params.raw;
+    bcrypt.hash(raw, 10, function(err, hash){
+        if(err){
+            return res.status(500).send('Interal Server Error');
         }
-        res.status(200).send('Login OK');
+        res.status(200).send(hash);
     });
 });
 
@@ -39,7 +61,6 @@ app.get('/now', function (req, res) {
 //root service (req = request, res = response)
 //root service must be at the last
 app.get('/', function (req, res) {
-    // res.send('Hello world');
     // res.sendFile(path.join(__dirname, 'views/index.html'));//current root repositories for index.html
     res.sendFile(path.join(__dirname, 'views/login.html'));//current root repositories for login.html
 });

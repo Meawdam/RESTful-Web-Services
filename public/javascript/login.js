@@ -1,6 +1,9 @@
-document.querySelector('button').onclick = function() {
-    const username = document.querySelector('#username').value;
-    const password = document.querySelector('#password').value;
+const formLogin = document.querySelector('#formLogin');
+formLogin.onsubmit = function(e){
+    //prevent form refresh
+    e.preventDefault();
+    const username = formLogin.username.value;
+    const password = formLogin.password.value;
     login(username, password);
 }
 
