@@ -5,6 +5,7 @@
 //Stimulate this computer to be server
 const express = require('express');
 const path = require('path');
+const con = require('./db.js')
 const app = express();
 
 //enable the server can reach the public folder
@@ -12,29 +13,19 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 //to tell the server to use JSON
 app.use(express.json());
 
-//check login wrong way
-//http://localhost:3000/login/Lisa/1234
-// app.get('/login/:username/:password', function(req, res){
-//     const username = req.params.username;
-//     const password = req.params.password;
-
-//     //short hand
-//     //const {username, password} = req.params;
-//     if(username == 'Lisa' && password == '1234'){
-//         res.status(200).send('Login OK');
-//     } else {
-//         res.status(401).send('Login failed');
-//     }
-// }); shouldn't do this
-
-//check login
 app.post('/login', function (req, res) {
     const { username, password } = req.body;
-    if (username == 'Lisa' && password == '1234') {
+    const sql = `SELECT id, username, role FROM user WHERE username = ? AND password = ?`;
+    con.query(sql, [username, password], function(err, result){
+        if(err){
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+        if(result.length != 1){
+            return res.status(401).send('Wrong username or password');
+        }
         res.status(200).send('Login OK');
-    } else {
-        res.status(401).send('Login failed');
-    }
+    });
 });
 
 
